@@ -26,7 +26,7 @@ class ListHandler(webapp2.RequestHandler):
     return jinja2.get_jinja2()
   
   def get(self):
-    key = Connection(info=self.request.headers.get('User-Agent'), status='setup').put()
+    key = Connection(info=self.request.headers.get('User-Agent'), status='disconnected').put()
     token = channel.create_channel(str(key.id()))
     self.response.write(self.jinja2.render_template('index.html', token=token))
 
