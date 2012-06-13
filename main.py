@@ -24,9 +24,14 @@ class ListHandler(webapp2.RequestHandler):
   @webapp2.cached_property
   def jinja2(self):
     return jinja2.get_jinja2()
-  
+ 
+  def tellAll(self):
+    for con in Connection.query().filter(Connection.connected == True).iter():
+      channel.send_message(str(con.key.id()), 'Someone JOINED')
+
   def get(self):
-    key = Connection(info=self.request.headers.get('User-Agent'), status='disconnected').put()
+    self.tellAll()
+    key = Connection(info=self.request.headers.get('User-Agent'), connected=False).put()
     token = channel.create_channel(str(key.id()))
     self.response.write(self.jinja2.render_template('index.html', token=token))
 
@@ -35,7 +40,7 @@ class ConnectHandler(webapp2.RequestHandler):
     client_id = self.request.get('from')
     logging.getLogger().info('{0} is connected'.format(client_id))
     con = Connection.get_by_id(int(client_id))
-    con.status = 'connected'
+    con.connected = True
     con.put()
 
 class DisconnectHandler(webapp2.RequestHandler):
@@ -43,7 +48,7 @@ class DisconnectHandler(webapp2.RequestHandler):
     client_id = self.request.get('from')
     logging.getLogger().info('{0} is disconnected'.format(client_id))
     con = Connection.get_by_id(int(client_id))
-    con.status = 'disconnected'
+    con.connected = False
     con.put()
 
 app = webapp2.WSGIApplication([
